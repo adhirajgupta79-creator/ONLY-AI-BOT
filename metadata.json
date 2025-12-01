@@ -1,0 +1,7 @@
+{
+  "name": " CREATOR AI ",
+  "description": "A powerful AI chatbot powered by Google's Gemini 3 Pro model, featuring a modern conversational interface.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
