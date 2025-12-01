@@ -2,9 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, Role } from '../types';
 
-// Global tracker to ensure only one bubble speaks at a time
-let activeSetIsSpeaking: ((speaking: boolean) => void) | null = null;
-
 interface ChatBubbleProps {
   message: Message;
   onEdit?: (id: string, newContent: string) => void;
@@ -13,7 +10,6 @@ interface ChatBubbleProps {
 const ChatBubbleComponent: React.FC<ChatBubbleProps> = ({ message, onEdit }) => {
   const isUser = message.role === Role.USER;
   const [isCopied, setIsCopied] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -87,16 +83,6 @@ const ChatBubbleComponent: React.FC<ChatBubbleProps> = ({ message, onEdit }) => 
     }
   }, [message.content, displayedContent, isUser]);
 
-  // Cleanup speech on unmount
-  useEffect(() => {
-    return () => {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        if (activeSetIsSpeaking === setIsSpeaking) activeSetIsSpeaking = null;
-      }
-    };
-  }, [isSpeaking]);
-
   // Auto-resize textarea
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -114,55 +100,6 @@ const ChatBubbleComponent: React.FC<ChatBubbleProps> = ({ message, onEdit }) => 
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
-    }
-  };
-
-  const handleSpeak = () => {
-    const synth = window.speechSynthesis;
-    if (!synth || !message.content) return;
-
-    if (isSpeaking) {
-      synth.cancel();
-      setIsSpeaking(false);
-      if (activeSetIsSpeaking === setIsSpeaking) activeSetIsSpeaking = null;
-    } else {
-      if (activeSetIsSpeaking && activeSetIsSpeaking !== setIsSpeaking) {
-        activeSetIsSpeaking(false);
-      }
-      synth.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(message.content);
-      
-      // Voice Selection Logic for "Sweet & Polite" (Female preference)
-      const voices = synth.getVoices();
-      const preferredVoice = 
-        voices.find(v => v.name === "Google US English") || 
-        voices.find(v => v.name === "Microsoft Zira Desktop - English (United States)") ||
-        voices.find(v => v.name.includes("Samantha")) || 
-        voices.find(v => v.name.toLowerCase().includes("female")) ||
-        voices.find(v => v.lang === 'en-US') ||
-        voices[0];
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-      
-      utterance.pitch = 1.05; 
-      utterance.rate = 1.0; 
-      
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        if (activeSetIsSpeaking === setIsSpeaking) activeSetIsSpeaking = null;
-      };
-      
-      utterance.onerror = () => {
-        setIsSpeaking(false);
-        if (activeSetIsSpeaking === setIsSpeaking) activeSetIsSpeaking = null;
-      };
-
-      activeSetIsSpeaking = setIsSpeaking;
-      setIsSpeaking(true);
-      synth.speak(utterance);
     }
   };
 
@@ -323,30 +260,6 @@ const ChatBubbleComponent: React.FC<ChatBubbleProps> = ({ message, onEdit }) => 
               
               {!isUser && (
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button
-                        onClick={handleSpeak}
-                        className={`p-1 rounded-md transition-all duration-200 ${
-                        isSpeaking
-                            ? 'text-black bg-neutral-200 dark:text-white dark:bg-gray-600'
-                            : 'text-neutral-400 hover:text-black hover:bg-neutral-100 dark:text-gray-500 dark:hover:text-white dark:hover:bg-gray-700'
-                        }`}
-                        title={isSpeaking ? "Stop speaking" : "Read aloud"}
-                    >
-                        {isSpeaking ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                            <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H5.75z" />
-                        </svg>
-                        ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                            <path d="M10 3.75a2 2 0 10-4 0 2 2 0 004 0zM17.25 4.5a.75.75 0 00-1.5 0v5a3 3 0 01-3 3h-1.5a.75.75 0 00-.75.75v2.5a.75.75 0 00.75.75h5.5a3 3 0 003-3v-9z" />
-                            <path clipRule="evenodd" fillRule="evenodd" d="M9 13.25a3 3 0 003-3v-5a3 3 0 10-6 0v5a3 3 0 003 3z" />
-                            <path d="M5 15.25a3 3 0 003 3h4a3 3 0 003-3V11a3 3 0 00-3-3H8a3 3 0 00-3 3v4.25z" />
-                            <path fillRule="evenodd" d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.596-.358.893-.229a7.012 7.012 0 018.113-1.508zM3 10a7 7 0 1014 0 7 7 0 00-14 0z" clipRule="evenodd" /> 
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                        </svg>
-                        )}
-                    </button>
-
                     <button
                         onClick={handleCopy}
                         className={`p-1 rounded-md transition-all duration-200 ${

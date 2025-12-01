@@ -1,22 +1,17 @@
 
 import React from 'react';
 
-export type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
-
 interface HeaderProps {
   title: string;
   subtitle?: string;
   onMenuClick: () => void;
-  voiceState?: VoiceState;
   onMicClick?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   title, 
   subtitle, 
-  onMenuClick,
-  voiceState = 'idle',
-  onMicClick 
+  onMenuClick
 }) => {
   return (
     <header className="bg-white dark:bg-gpt-main border-b border-neutral-100 dark:border-none p-4 flex items-center gap-3 sticky top-0 z-10 transition-colors duration-200 pr-4">
@@ -39,37 +34,6 @@ export const Header: React.FC<HeaderProps> = ({
         <h1 className="font-bold text-black dark:text-white text-lg leading-none truncate">{title}</h1>
         {subtitle && <p className="text-xs text-neutral-500 dark:text-gray-400 font-medium mt-1 truncate">{subtitle}</p>}
       </div>
-
-      {/* Microphone Button */}
-      {onMicClick && (
-          <button
-            onClick={onMicClick}
-            className={`
-                relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300
-                ${voiceState === 'idle' ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700' : ''}
-                ${voiceState === 'listening' ? 'bg-red-500/10 text-red-500 ring-2 ring-red-500/50' : ''}
-                ${voiceState === 'processing' ? 'bg-yellow-500/10 text-yellow-500 ring-2 ring-yellow-500/50' : ''}
-                ${voiceState === 'speaking' ? 'bg-green-500/10 text-green-500 ring-2 ring-green-500/50' : ''}
-            `}
-            title="Voice Chat"
-          >
-             {/* Animations based on state */}
-             {voiceState === 'listening' && (
-                 <span className="absolute inset-0 rounded-xl animate-ping bg-red-500 opacity-20"></span>
-             )}
-             {voiceState === 'processing' && (
-                 <span className="absolute inset-0 rounded-xl border-2 border-yellow-500 border-t-transparent animate-spin"></span>
-             )}
-             {voiceState === 'speaking' && (
-                 <span className="absolute inset-0 rounded-xl animate-pulse bg-green-500 opacity-20"></span>
-             )}
-
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 relative z-10">
-                <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
-                <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
-             </svg>
-          </button>
-      )}
     </header>
   );
 };

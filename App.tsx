@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, Chat } from "@google/genai";
-import { Header, VoiceState } from './components/Header';
+import { Header } from './components/Header';
 import { ChatBubble } from './components/ChatBubble';
 import { ChatInput } from './components/ChatInput';
 import { TypingIndicator } from './components/TypingIndicator';
@@ -9,7 +9,6 @@ import { Sidebar } from './components/Sidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { LoginPage } from './components/LoginPage';
 import { SplashScreen } from './components/SplashScreen';
-import { VoiceLogic } from './components/VoiceOrb'; // Renamed import
 import { Message, Role, ChatSession, User } from './types';
 
 const DEFAULT_GREETING = "Hello! I am CREATOR. How can I help you today?";
@@ -30,10 +29,6 @@ const createNewSession = (greeting = DEFAULT_GREETING): ChatSession => ({
 const App: React.FC = () => {
   // --- Splash Screen State ---
   const [showSplash, setShowSplash] = useState(true);
-
-  // --- Voice State ---
-  const [voiceTrigger, setVoiceTrigger] = useState(false); // Toggle to trigger logic
-  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
 
   // --- Authentication State ---
   const [user, setUser] = useState<User | null>(() => {
@@ -138,7 +133,8 @@ const App: React.FC = () => {
       if (!activeSession) return;
       
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "DEMO_KEY" });
+        // Use process.env.API_KEY strictly as per guidelines
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const history = activeSession.messages
           .filter(msg => msg.id !== 'init-1')
           .map(msg => ({
@@ -360,27 +356,6 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  // --- VOICE LOGIC INTEGRATION ---
-  const handleVoiceTranscript = (role: 'user' | 'model', text: string) => {
-      // Inject voice results into chat history
-      setSessions(prev => {
-          const current = prev.find(s => s.id === activeSessionId);
-          if (!current) return prev;
-          
-          const newMsg: Message = {
-              id: Date.now().toString() + role,
-              role: role === 'user' ? Role.USER : Role.MODEL,
-              content: text,
-              timestamp: new Date()
-          };
-          
-          return prev.map(s => s.id === activeSessionId 
-              ? { ...s, messages: [...s.messages, newMsg], updatedAt: Date.now() } 
-              : s
-          );
-      });
-  };
-
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
@@ -392,14 +367,6 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-gpt-main text-gpt-text transition-colors duration-200">
       
-      {/* Invisible Logic Controller */}
-      <VoiceLogic 
-        apiKey={process.env.API_KEY || 'DEMO_KEY'}
-        trigger={voiceTrigger}
-        onStateChange={setVoiceState}
-        onTranscript={handleVoiceTranscript}
-      />
-
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
@@ -425,8 +392,6 @@ const App: React.FC = () => {
             title={activeSession?.title || "CREATOR"} 
             subtitle="Powered by Gemini 3 Pro" 
             onMenuClick={() => setIsSidebarOpen(true)}
-            voiceState={voiceState}
-            onMicClick={() => setVoiceTrigger(prev => !prev)} // Toggle trigger
         />
       </div>
       
